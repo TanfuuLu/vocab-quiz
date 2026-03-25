@@ -1,0 +1,218 @@
+:root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --success: #16a34a;
+    --danger: #dc2626;
+}
+
+body {
+    background: #f5f5f7;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Navbar ── */
+.navbar {
+    background: var(--primary) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.navbar .nav-link {
+    color: rgba(255,255,255,0.8) !important;
+    border-radius: 8px;
+    padding: 6px 14px;
+    transition: all 0.2s;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+    color: #fff !important;
+    background: rgba(255,255,255,0.2);
+}
+
+/* ── Upload area ── */
+.upload-area {
+    border: 2px dashed #c7c7d0;
+    border-radius: 16px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.upload-area:hover,
+.upload-area.drag-over {
+    border-color: var(--primary);
+    background: #eef2ff;
+}
+
+/* ── Word cards ── */
+.word-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: #fff;
+}
+.word-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+.word-card.known {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    opacity: 0.85;
+}
+.word-card .card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e1b4b;
+    text-transform: capitalize;
+}
+.definition-text {
+    font-size: 0.88rem;
+    color: #4b5563;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ── Quiz ── */
+.quiz-word {
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 800;
+    color: #1e1b4b;
+    letter-spacing: -0.5px;
+    text-transform: capitalize;
+}
+
+.choice-btn {
+    text-align: left;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: all 0.15s;
+    border: 2px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+}
+.choice-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    background: #eef2ff;
+    color: var(--primary);
+    transform: translateX(4px);
+}
+.choice-btn.btn-success {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #fff !important;
+}
+.choice-btn.btn-danger {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+    color: #fff !important;
+}
+
+.quiz-card .card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+}
+.progress-bar {
+    background: var(--primary);
+    transition: width 0.4s ease;
+}
+
+/* ── Results ── */
+#results-icon {
+    font-size: 4rem;
+}
+.list-group-item.list-group-item-success {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+.list-group-item.list-group-item-danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+/* ── Stats cards ── */
+.stat-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    text-align: center;
+    padding: 12px;
+}
+.stat-card .stat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ── Empty state ── */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+}
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 12px;
+}
+
+/* ── Vietnamese text ── */
+.vietnamese-text {
+    font-size: 0.88rem;
+    color: #b45309;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+}
+
+/* ── Quiz language toggle ── */
+.lang-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    user-select: none;
+    background: #fff;
+    color: #374151;
+}
+.lang-btn:hover {
+    border-color: var(--primary);
+    background: #eef2ff;
+}
+.lang-btn.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ── Misc ── */
+.badge {
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+.btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}

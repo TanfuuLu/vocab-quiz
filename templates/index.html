@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VocabQuiz</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container">
+    <span class="navbar-brand fw-bold text-white fs-5">
+      <i class="fas fa-book-open me-2"></i>VocabQuiz
+    </span>
+    <ul class="nav nav-pills ms-auto" id="mainTabs">
+      <li class="nav-item">
+        <button class="nav-link active" data-tab="quiz" onclick="App.showTab('quiz')">
+          <i class="fas fa-question-circle me-1"></i>Quiz
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-tab="vocab" onclick="App.showTab('vocab')">
+          <i class="fas fa-list me-1"></i>Vocabulary
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-tab="pdf" onclick="App.showTab('pdf')">
+          <i class="fas fa-file-pdf me-1"></i>Import PDF
+        </button>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container py-4">
+
+  <!-- ══════════════ QUIZ TAB ══════════════ -->
+  <div id="tab-quiz" class="tab-pane">
+
+    <!-- Start screen -->
+    <div id="quiz-start" class="text-center py-5">
+      <div class="mb-3" style="font-size:3.5rem;">📖</div>
+      <h2 class="fw-bold mb-1">Vocabulary Quiz</h2>
+      <p class="text-muted mb-4">Test your knowledge — choose the correct meaning of each word</p>
+      <div class="card mx-auto p-4" style="max-width:420px;border-radius:16px;border:1px solid #e5e7eb;">
+        <div class="mb-3 text-start">
+          <label class="form-label fw-semibold">Number of questions</label>
+          <input type="number" class="form-control" id="quizCount" value="10" min="1" max="50">
+        </div>
+        <div class="mb-3 text-start">
+          <label class="form-label fw-semibold">Quiz language</label>
+          <div class="d-flex gap-2">
+            <div class="lang-btn active" id="lang-en" onclick="App.setLang('en')">
+              🇺🇸 English
+            </div>
+            <div class="lang-btn" id="lang-vi" onclick="App.setLang('vi')">
+              🇻🇳 Tiếng Việt
+            </div>
+          </div>
+        </div>
+        <div class="form-check text-start mb-1">
+          <input class="form-check-input" type="checkbox" id="unknownOnly" checked>
+          <label class="form-check-label" for="unknownOnly">Only include words not yet marked as known</label>
+        </div>
+      </div>
+      <div id="quiz-start-error" class="alert alert-warning mt-3 mx-auto d-none" style="max-width:420px;"></div>
+      <button class="btn btn-primary btn-lg mt-4 px-5" onclick="App.startQuiz()">
+        <i class="fas fa-play me-2"></i>Start Quiz
+      </button>
+    </div>
+
+    <!-- Question screen -->
+    <div id="quiz-question" class="d-none">
+      <div class="mb-4" style="max-width:600px;margin:0 auto;">
+        <div class="d-flex justify-content-between mb-1">
+          <span id="quiz-progress-text" class="text-muted small">Question 1 of 10</span>
+          <span id="quiz-score-text" class="text-muted small fw-semibold">Score: 0</span>
+        </div>
+        <div class="progress"><div class="progress-bar" id="quiz-progress-bar" style="width:0%"></div></div>
+      </div>
+      <div class="quiz-card mx-auto" style="max-width:600px;">
+        <div class="card">
+          <div class="card-body p-4 p-md-5">
+            <p class="text-muted text-center mb-2 small text-uppercase letter-spacing" id="quiz-instruction">
+              What is the meaning of
+            </p>
+            <h2 class="quiz-word text-center mb-4" id="quiz-word"></h2>
+            <div id="quiz-choices" class="d-grid gap-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results screen -->
+    <div id="quiz-results" class="d-none text-center py-4">
+      <div id="results-icon" class="mb-2"></div>
+      <h2 id="results-title" class="fw-bold mb-1"></h2>
+      <p id="results-score" class="lead text-muted mb-4"></p>
+      <div id="results-breakdown" class="mx-auto mb-4 text-start" style="max-width:540px;"></div>
+      <button class="btn btn-primary btn-lg me-2" onclick="App.startQuiz()">
+        <i class="fas fa-redo me-2"></i>Try Again
+      </button>
+      <button class="btn btn-outline-secondary btn-lg" onclick="App.showTab('quiz')">
+        <i class="fas fa-home me-2"></i>Home
+      </button>
+    </div>
+
+  </div><!-- /tab-quiz -->
+
+
+  <!-- ══════════════ VOCABULARY TAB ══════════════ -->
+  <div id="tab-vocab" class="tab-pane d-none">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="fw-bold mb-0">Vocabulary</h2>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWordModal">
+        <i class="fas fa-plus me-1"></i>Add Word
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="row g-2 mb-3">
+      <div class="col-md-6">
+        <input type="text" class="form-control" id="vocabSearch"
+               placeholder="Search words, definitions, or Vietnamese..." oninput="App.filterVocab()">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" id="vocabFilter" onchange="App.filterVocab()">
+          <option value="all">All words</option>
+          <option value="unknown">Unknown only</option>
+          <option value="known">Known only</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div id="vocab-stats" class="row g-2 mb-4"></div>
+
+    <!-- Word list -->
+    <div id="vocab-list" class="row g-3"></div>
+  </div><!-- /tab-vocab -->
+
+
+  <!-- ══════════════ PDF TAB ══════════════ -->
+  <div id="tab-pdf" class="tab-pane d-none">
+    <h2 class="fw-bold mb-4">Import from PDF</h2>
+
+    <!-- Upload area -->
+    <div class="upload-area mb-4" id="pdf-upload-area">
+      <div class="text-center py-5 px-3">
+        <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color:#9ca3af;"></i>
+        <h5 class="fw-semibold">Drag &amp; drop a PDF here</h5>
+        <p class="text-muted mb-3">or click below to browse</p>
+        <input type="file" id="pdf-input" accept=".pdf" class="d-none" onchange="App.handleFileSelect(this)">
+        <button class="btn btn-outline-primary" onclick="document.getElementById('pdf-input').click()">
+          <i class="fas fa-folder-open me-1"></i>Choose PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Extracted words -->
+    <div id="pdf-results" class="d-none">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h5 class="mb-0" id="pdf-results-title">Extracted Words</h5>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-sm btn-outline-secondary" onclick="App.selectAllWords(true)">Select All</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="App.selectAllWords(false)">Deselect All</button>
+          <button class="btn btn-sm btn-primary" onclick="App.saveSelectedWords()" id="save-words-btn">
+            <i class="fas fa-save me-1"></i>Fetch &amp; Save Selected
+          </button>
+        </div>
+      </div>
+      <div id="pdf-progress" class="mb-3 d-none">
+        <div class="progress mb-1"><div class="progress-bar progress-bar-striped progress-bar-animated" id="def-progress-bar" style="width:0%"></div></div>
+        <small class="text-muted" id="def-progress-status">Fetching definitions...</small>
+      </div>
+      <div id="pdf-word-list" class="row g-2"></div>
+    </div>
+  </div><!-- /tab-pdf -->
+
+</div><!-- /container -->
+
+
+<!-- ══════════════ ADD WORD MODAL ══════════════ -->
+<div class="modal fade" id="addWordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Add Word</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Word</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="new-word" placeholder="Enter a word"
+                   onkeydown="if(event.key==='Enter') App.fetchWordDef()">
+            <button class="btn btn-outline-secondary" onclick="App.fetchWordDef()" id="lookup-btn">
+              <i class="fas fa-search me-1"></i>Lookup
+            </button>
+          </div>
+        </div>
+        <div id="word-def-preview" class="d-none">
+          <div class="mb-3">
+            <label class="form-label">Part of Speech</label>
+            <input type="text" class="form-control" id="new-pos">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Definition <span class="text-muted fw-normal">(English)</span></label>
+            <textarea class="form-control" id="new-def" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">
+              Nghĩa tiếng Việt
+              <span class="badge bg-warning text-dark ms-1" style="font-size:0.7rem;">🇻🇳</span>
+            </label>
+            <input type="text" class="form-control" id="new-vietnamese" placeholder="Vietnamese meaning">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Example <span class="text-muted fw-normal">(optional)</span></label>
+            <input type="text" class="form-control" id="new-example">
+          </div>
+        </div>
+        <div id="word-duplicate" class="d-none alert alert-danger py-2">
+          <i class="fas fa-exclamation-circle me-1"></i>
+          This word is already in your vocabulary.
+        </div>
+        <div id="word-not-found" class="d-none alert alert-warning py-2">
+          Word not found in dictionary — you can enter the definition manually.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="App.saveNewWord()">
+          <i class="fas fa-save me-1"></i>Save Word
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const App = {
+  vocab: [],
+  quizQuestions: [],
+  quizIndex: 0,
+  quizScore: 0,
+  quizResults: [],
+  quizLang: 'en',       // 'en' or 'vi'
+  pdfFilename: '',
+
+  init() {
+    this.setupDropzone();
+    // Silently load vocab when Add Word modal opens so duplicate check works
+    document.getElementById('addWordModal').addEventListener('show.bs.modal', async () => {
+      if (this.vocab.length === 0) {
+        try {
+          const r = await fetch('/api/vocabulary');
+          this.vocab = await r.json();
+        } catch (e) { /* ignore — backend will catch duplicates on save */ }
+      }
+    });
+    // Reset duplicate warning when modal closes
+    document.getElementById('addWordModal').addEventListener('hidden.bs.modal', () => {
+      ['new-word','new-pos','new-def','new-example','new-vietnamese'].forEach(id =>
+        document.getElementById(id).value = ''
+      );
+      document.getElementById('word-def-preview').classList.add('d-none');
+      document.getElementById('word-not-found').classList.add('d-none');
+      document.getElementById('word-duplicate').classList.add('d-none');
+    });
+  },
+
+  // ── Tab navigation ──────────────────────────────────────
+  showTab(tab) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('d-none'));
+    document.getElementById(`tab-${tab}`).classList.remove('d-none');
+    document.querySelectorAll('#mainTabs .nav-link').forEach(el => el.classList.remove('active'));
+    const btn = document.querySelector(`#mainTabs [data-tab="${tab}"]`);
+    if (btn) btn.classList.add('active');
+    if (tab === 'vocab') this.loadVocab();
+    if (tab === 'quiz') {
+      document.getElementById('quiz-start').classList.remove('d-none');
+      document.getElementById('quiz-question').classList.add('d-none');
+      document.getElementById('quiz-results').classList.add('d-none');
+      document.getElementById('quiz-start-error').classList.add('d-none');
+    }
+  },
+
+  // ── Quiz language toggle ────────────────────────────────
+  setLang(lang) {
+    this.quizLang = lang;
+    document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+    document.getElementById('lang-vi').classList.toggle('active', lang === 'vi');
+  },
+
+  // ── Quiz ────────────────────────────────────────────────
+  async startQuiz() {
+    const count = Math.max(1, parseInt(document.getElementById('quizCount').value) || 10);
+    const unknownOnly = document.getElementById('unknownOnly').checked;
+    const errEl = document.getElementById('quiz-start-error');
+
+    try {
+      const r = await fetch(`/api/quiz?count=${count}&unknown_only=${unknownOnly}&lang=${this.quizLang}`);
+      const data = await r.json();
+      if (data.error) {
+        errEl.textContent = data.error;
+        errEl.classList.remove('d-none');
+        return;
+      }
+      errEl.classList.add('d-none');
+      this.quizQuestions = data;
+      this.quizIndex = 0;
+      this.quizScore = 0;
+      this.quizResults = [];
+      this.showQuestion();
+    } catch (e) {
+      errEl.textContent = 'Failed to connect to server.';
+      errEl.classList.remove('d-none');
+    }
+  },
+
+  showQuestion() {
+    const q = this.quizQuestions[this.quizIndex];
+    const total = this.quizQuestions.length;
+
+    document.getElementById('quiz-start').classList.add('d-none');
+    document.getElementById('quiz-results').classList.add('d-none');
+    document.getElementById('quiz-question').classList.remove('d-none');
+
+    document.getElementById('quiz-progress-text').textContent =
+      `Question ${this.quizIndex + 1} of ${total}`;
+    document.getElementById('quiz-score-text').textContent =
+      `Score: ${this.quizScore}`;
+    document.getElementById('quiz-progress-bar').style.width =
+      `${(this.quizIndex / total) * 100}%`;
+    document.getElementById('quiz-word').textContent = q.word;
+
+    // Update instruction label based on language
+    document.getElementById('quiz-instruction').textContent =
+      this.quizLang === 'vi'
+        ? 'Nghĩa tiếng Việt của từ này là gì?'
+        : 'What is the meaning of';
+
+    const choicesEl = document.getElementById('quiz-choices');
+    choicesEl.innerHTML = '';
+    q.choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.className = 'btn choice-btn text-start';
+      btn.textContent = choice;
+      btn.onclick = () => this.selectAnswer(choice, q.correct);
+      choicesEl.appendChild(btn);
+    });
+  },
+
+  selectAnswer(choice, correct) {
+    const isCorrect = choice === correct;
+    if (isCorrect) this.quizScore++;
+
+    this.quizResults.push({
+      word: this.quizQuestions[this.quizIndex].word,
+      correct,
+      chosen: choice,
+      wasCorrect: isCorrect
+    });
+
+    document.querySelectorAll('.choice-btn').forEach(btn => {
+      btn.disabled = true;
+      if (btn.textContent === correct) {
+        btn.classList.add('btn-success');
+      } else if (btn.textContent === choice && !isCorrect) {
+        btn.classList.add('btn-danger');
+      }
+    });
+    document.getElementById('quiz-score-text').textContent = `Score: ${this.quizScore}`;
+
+    setTimeout(() => {
+      this.quizIndex++;
+      if (this.quizIndex >= this.quizQuestions.length) this.showResults();
+      else this.showQuestion();
+    }, 1500);
+  },
+
+  showResults() {
+    document.getElementById('quiz-question').classList.add('d-none');
+    document.getElementById('quiz-results').classList.remove('d-none');
+
+    const total = this.quizQuestions.length;
+    const pct = Math.round((this.quizScore / total) * 100);
+
+    document.getElementById('results-icon').textContent =
+      pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '📚';
+    document.getElementById('results-title').textContent =
+      pct >= 80 ? 'Excellent!' : pct >= 60 ? 'Good job!' : 'Keep studying!';
+    document.getElementById('results-score').textContent =
+      `${this.quizScore} / ${total} correct (${pct}%)`;
+
+    document.getElementById('results-breakdown').innerHTML =
+      '<div class="list-group">' +
+      this.quizResults.map(r => `
+        <div class="list-group-item list-group-item-${r.wasCorrect ? 'success' : 'danger'} py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <strong class="text-capitalize">${this.esc(r.word)}</strong>
+            <span>${r.wasCorrect ? '✓' : '✗'}</span>
+          </div>
+          <small class="opacity-75">${this.esc(r.correct)}</small>
+        </div>`).join('') +
+      '</div>';
+  },
+
+  // ── Vocabulary ──────────────────────────────────────────
+  async loadVocab() {
+    try {
+      const r = await fetch('/api/vocabulary');
+      this.vocab = await r.json();
+      this.renderVocab(this.vocab);
+    } catch (e) {
+      document.getElementById('vocab-list').innerHTML =
+        '<div class="col-12"><div class="alert alert-danger">Failed to load vocabulary.</div></div>';
+    }
+  },
+
+  filterVocab() {
+    const q = document.getElementById('vocabSearch').value.toLowerCase();
+    const filter = document.getElementById('vocabFilter').value;
+    let list = this.vocab;
+    if (q) list = list.filter(w =>
+      w.word.includes(q) ||
+      (w.definition || '').toLowerCase().includes(q) ||
+      (w.vietnamese || '').toLowerCase().includes(q)
+    );
+    if (filter === 'known') list = list.filter(w => w.known);
+    if (filter === 'unknown') list = list.filter(w => !w.known);
+    this.renderVocab(list);
+  },
+
+  renderVocab(words) {
+    const total = this.vocab.length;
+    const known = this.vocab.filter(w => w.known).length;
+
+    document.getElementById('vocab-stats').innerHTML = `
+      <div class="col-4 col-sm-3 col-md-2">
+        <div class="stat-card">
+          <div class="stat-number text-primary">${total}</div>
+          <div class="small text-muted">Total</div>
+        </div>
+      </div>
+      <div class="col-4 col-sm-3 col-md-2">
+        <div class="stat-card">
+          <div class="stat-number text-success">${known}</div>
+          <div class="small text-muted">Known</div>
+        </div>
+      </div>
+      <div class="col-4 col-sm-3 col-md-2">
+        <div class="stat-card">
+          <div class="stat-number text-warning">${total - known}</div>
+          <div class="small text-muted">Learning</div>
+        </div>
+      </div>`;
+
+    const listEl = document.getElementById('vocab-list');
+    if (words.length === 0) {
+      listEl.innerHTML = `<div class="col-12 empty-state">
+        <i class="fas fa-inbox d-block"></i>
+        <p class="mt-2">${this.vocab.length === 0
+          ? 'No words yet — import a PDF or add words manually.'
+          : 'No words match your filters.'}</p>
+      </div>`;
+      return;
+    }
+
+    const posColors = {
+      noun: 'bg-primary', verb: 'bg-success', adjective: 'bg-warning text-dark',
+      adverb: 'bg-info text-dark', other: 'bg-secondary'
+    };
+
+    listEl.innerHTML = words.map(w => {
+      const posClass = posColors[w.part_of_speech] || posColors.other;
+      return `
+      <div class="col-md-6 col-lg-4" id="wcard-${w.id}">
+        <div class="card word-card h-100 ${w.known ? 'known' : ''}">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="card-title mb-0">${this.esc(w.word)}</h5>
+              ${w.part_of_speech
+                ? `<span class="badge ${posClass} ms-2">${this.esc(w.part_of_speech)}</span>`
+                : ''}
+            </div>
+            <p class="definition-text mb-1">
+              ${w.definition ? this.esc(w.definition) : '<em class="text-muted">No definition</em>'}
+            </p>
+            ${w.vietnamese
+              ? `<p class="vietnamese-text flex-grow-1">🇻🇳 ${this.esc(w.vietnamese)}</p>`
+              : '<p class="flex-grow-1"></p>'}
+            ${w.example
+              ? `<p class="small text-muted fst-italic mb-2">"${this.esc(w.example)}"</p>`
+              : ''}
+            ${w.source_file
+              ? `<div class="small text-muted mb-2"><i class="fas fa-file-pdf me-1 text-danger"></i>${this.esc(w.source_file)}</div>`
+              : ''}
+            <div class="d-flex gap-2 mt-1">
+              <button class="btn btn-sm ${w.known ? 'btn-success' : 'btn-outline-success'}"
+                      onclick="App.toggleKnown(${w.id})">
+                <i class="fas fa-check me-1"></i>${w.known ? 'Known' : 'Know it?'}
+              </button>
+              <button class="btn btn-sm btn-outline-danger ms-auto"
+                      onclick="App.deleteWord(${w.id})" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  },
+
+  async toggleKnown(id) {
+    await fetch(`/api/vocabulary/${id}/known`, { method: 'PATCH' });
+    const w = this.vocab.find(v => v.id === id);
+    if (w) w.known = !w.known;
+    this.filterVocab();
+  },
+
+  async deleteWord(id) {
+    await fetch(`/api/vocabulary/${id}`, { method: 'DELETE' });
+    this.vocab = this.vocab.filter(v => v.id !== id);
+    this.filterVocab();
+  },
+
+  // Add word modal
+  async fetchWordDef() {
+    const word = document.getElementById('new-word').value.trim().toLowerCase();
+    if (!word) return;
+
+    const dupEl  = document.getElementById('word-duplicate');
+    const nfEl   = document.getElementById('word-not-found');
+    const preEl  = document.getElementById('word-def-preview');
+
+    // ── Duplicate check against loaded vocab ──────────────
+    const alreadySaved = this.vocab.find(v => v.word === word);
+    if (alreadySaved) {
+      dupEl.classList.remove('d-none');
+      nfEl.classList.add('d-none');
+      preEl.classList.add('d-none');
+      return;
+    }
+    dupEl.classList.add('d-none');
+
+    const btn = document.getElementById('lookup-btn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    btn.disabled = true;
+
+    const r = await fetch('/api/word-definition', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word })
+    });
+    const data = await r.json();
+
+    btn.innerHTML = '<i class="fas fa-search me-1"></i>Lookup';
+    btn.disabled = false;
+
+    preEl.classList.remove('d-none');
+    document.getElementById('new-pos').value       = data.part_of_speech || '';
+    document.getElementById('new-def').value       = data.definition || '';
+    document.getElementById('new-example').value   = data.example || '';
+    document.getElementById('new-vietnamese').value = data.vietnamese || '';
+
+    nfEl.classList.toggle('d-none', data.found === true);
+  },
+
+  async saveNewWord() {
+    const word = document.getElementById('new-word').value.trim();
+    if (!word) { alert('Please enter a word.'); return; }
+
+    const r = await fetch('/api/vocabulary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        word,
+        definition:    document.getElementById('new-def').value.trim(),
+        part_of_speech: document.getElementById('new-pos').value.trim(),
+        example:       document.getElementById('new-example').value.trim(),
+        vietnamese:    document.getElementById('new-vietnamese').value.trim()
+      })
+    });
+    const data = await r.json();
+    if (data.error) { alert(data.error); return; }
+
+    bootstrap.Modal.getInstance(document.getElementById('addWordModal')).hide();
+    this.showTab('vocab');
+  },
+
+  // ── PDF Import ──────────────────────────────────────────
+  setupDropzone() {
+    const dz = document.getElementById('pdf-upload-area');
+    if (!dz) return;
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) this.uploadPDF(e.dataTransfer.files[0]);
+    });
+  },
+
+  handleFileSelect(input) {
+    if (input.files[0]) this.uploadPDF(input.files[0]);
+  },
+
+  async uploadPDF(file) {
+    const area = document.getElementById('pdf-upload-area');
+    area.innerHTML = `<div class="text-center py-5">
+      <div class="spinner-border text-primary mb-3"></div>
+      <p class="text-muted">Analyzing <strong>${this.esc(file.name)}</strong>...</p>
+    </div>`;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const r = await fetch('/api/upload-pdf', { method: 'POST', body: formData });
+      const data = await r.json();
+      if (data.error) { alert(data.error); this.resetUploadArea(); return; }
+      this.pdfFilename = data.filename;
+      this.renderPDFWords(data);
+    } catch (e) {
+      alert('Upload failed. Is the server running?');
+      this.resetUploadArea();
+    }
+  },
+
+  resetUploadArea() {
+    document.getElementById('pdf-upload-area').innerHTML = `
+      <div class="text-center py-5 px-3">
+        <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color:#9ca3af;"></i>
+        <h5 class="fw-semibold">Drag &amp; drop a PDF here</h5>
+        <p class="text-muted mb-3">or click below to browse</p>
+        <input type="file" id="pdf-input" accept=".pdf" class="d-none" onchange="App.handleFileSelect(this)">
+        <button class="btn btn-outline-primary" onclick="document.getElementById('pdf-input').click()">
+          <i class="fas fa-folder-open me-1"></i>Choose PDF
+        </button>
+      </div>`;
+    this.setupDropzone();
+  },
+
+  renderPDFWords(data) {
+    const titleEl = document.getElementById('pdf-results-title');
+    const parts = [];
+    if (data.new_words.length > 0) parts.push(`${data.new_words.length} new words found`);
+    if (data.already_saved > 0) parts.push(`${data.already_saved} already in library`);
+    titleEl.textContent = parts.join(' · ');
+
+    const listEl = document.getElementById('pdf-word-list');
+    if (data.new_words.length === 0) {
+      listEl.innerHTML = `<div class="col-12 text-muted py-3">
+        All extracted words are already in your vocabulary.
+      </div>`;
+    } else {
+      listEl.innerHTML = data.new_words.map(w => `
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+          <div class="form-check">
+            <input class="form-check-input pdf-word-check" type="checkbox"
+                   value="${this.esc(w)}" id="pw-${this.esc(w)}" checked>
+            <label class="form-check-label text-capitalize" for="pw-${this.esc(w)}">${this.esc(w)}</label>
+          </div>
+        </div>`).join('');
+    }
+    document.getElementById('pdf-results').classList.remove('d-none');
+  },
+
+  selectAllWords(state) {
+    document.querySelectorAll('.pdf-word-check').forEach(cb => cb.checked = state);
+  },
+
+  async saveSelectedWords() {
+    const checked = [...document.querySelectorAll('.pdf-word-check:checked')].map(cb => cb.value);
+    if (checked.length === 0) { alert('No words selected.'); return; }
+
+    const btn = document.getElementById('save-words-btn');
+    btn.disabled = true;
+
+    const prog = document.getElementById('pdf-progress');
+    const progBar = document.getElementById('def-progress-bar');
+    const progStatus = document.getElementById('def-progress-status');
+    prog.classList.remove('d-none');
+
+    const wordsWithDefs = [];
+    for (let i = 0; i < checked.length; i++) {
+      const word = checked[i];
+      progBar.style.width = `${Math.round(((i + 1) / checked.length) * 100)}%`;
+      progStatus.textContent = `Fetching: ${word} (${i + 1}/${checked.length})`;
+      try {
+        const r = await fetch('/api/word-definition', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word })
+        });
+        const d = await r.json();
+        wordsWithDefs.push({
+          word,
+          definition:    d.definition || '',
+          part_of_speech: d.part_of_speech || '',
+          example:       d.example || '',
+          vietnamese:    d.vietnamese || ''
+        });
+      } catch (e) {
+        wordsWithDefs.push({ word, definition: '', part_of_speech: '', example: '', vietnamese: '' });
+      }
+    }
+
+    const r = await fetch('/api/vocabulary/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ words: wordsWithDefs, source_file: this.pdfFilename })
+    });
+    const result = await r.json();
+
+    prog.classList.add('d-none');
+    btn.disabled = false;
+
+    alert(`Saved ${result.added} word${result.added !== 1 ? 's' : ''} to your vocabulary!`);
+    document.getElementById('pdf-results').classList.add('d-none');
+    this.resetUploadArea();
+    this.showTab('vocab');
+  },
+
+  // ── Utilities ───────────────────────────────────────────
+  esc(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(String(str)));
+    return d.innerHTML;
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
