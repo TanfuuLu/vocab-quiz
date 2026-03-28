@@ -176,6 +176,11 @@ def upload_pdf():
     new_words = [w for w in unique_words if w not in existing]
     already_saved = len(unique_words) - len(new_words)
 
+    # Apply word limit if specified
+    limit = request.form.get('limit', 0, type=int)
+    if limit > 0:
+        new_words = new_words[:limit]
+
     return jsonify({
         'filename': file.filename,
         'new_words': new_words,

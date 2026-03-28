@@ -148,6 +148,16 @@
   <div id="tab-pdf" class="tab-pane d-none">
     <h2 class="fw-bold mb-4">Import from PDF</h2>
 
+    <!-- Word limit input -->
+    <div class="card mb-4 p-3" style="max-width:360px;border-radius:14px;border:1px solid #e5e7eb;">
+      <label class="form-label fw-semibold mb-1">Number of words to extract</label>
+      <div class="d-flex align-items-center gap-2">
+        <input type="number" class="form-control" id="pdf-word-limit" value="50" min="1" max="500" style="max-width:120px;">
+        <span class="text-muted small">words from PDF</span>
+      </div>
+      <div class="form-text">Leave blank or 0 to extract all words.</div>
+    </div>
+
     <!-- Upload area -->
     <div class="upload-area mb-4" id="pdf-upload-area">
       <div class="text-center py-5 px-3">
@@ -620,8 +630,11 @@ const App = {
       <p class="text-muted">Analyzing <strong>${this.esc(file.name)}</strong>...</p>
     </div>`;
 
+    const limitVal = parseInt(document.getElementById('pdf-word-limit')?.value) || 0;
+
     const formData = new FormData();
     formData.append('file', file);
+    if (limitVal > 0) formData.append('limit', limitVal);
 
     try {
       const r = await fetch('/api/upload-pdf', { method: 'POST', body: formData });
