@@ -252,6 +252,7 @@ const App = {
   quizResults: [],
   quizLang: 'en',       // 'en' or 'vi'
   pdfFilename: '',
+  pdfWordData: {},      // word -> { definition, part_of_speech, example, vietnamese }
 
   init() {
     this.setupDropzone();
@@ -635,6 +636,7 @@ const App = {
   },
 
   resetUploadArea() {
+    this.pdfWordData = {};
     document.getElementById('pdf-upload-area').innerHTML = `
       <div class="text-center py-5 px-3">
         <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color:#9ca3af;"></i>
@@ -655,6 +657,7 @@ const App = {
     if (data.already_saved > 0) parts.push(`${data.already_saved} already in library`);
     titleEl.textContent = parts.join(' · ');
 
+    this.pdfWordData = {};
     const listEl = document.getElementById('pdf-word-list');
     if (data.new_words.length === 0) {
       listEl.innerHTML = `<div class="col-12 text-muted py-3">
@@ -662,15 +665,48 @@ const App = {
       </div>`;
     } else {
       listEl.innerHTML = data.new_words.map(w => `
-        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-          <div class="form-check">
-            <input class="form-check-input pdf-word-check" type="checkbox"
-                   value="${this.esc(w)}" id="pw-${this.esc(w)}" checked>
-            <label class="form-check-label text-capitalize" for="pw-${this.esc(w)}">${this.esc(w)}</label>
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="pdf-word-card">
+            <div class="form-check mb-1">
+              <input class="form-check-input pdf-word-check" type="checkbox"
+                     value="${this.esc(w)}" id="pw-${this.esc(w)}" checked>
+              <label class="form-check-label text-capitalize fw-semibold" for="pw-${this.esc(w)}">${this.esc(w)}</label>
+            </div>
+            <div class="pdf-vi-text" id="vi-${this.esc(w)}">
+              <span class="spinner-border spinner-border-sm text-muted"
+                    style="width:.65rem;height:.65rem;border-width:1.5px;"></span>
+            </div>
           </div>
         </div>`).join('');
+
+      // Auto-fetch Vietnamese meanings progressively
+      this.fetchPDFWordDefinitions(data.new_words);
     }
     document.getElementById('pdf-results').classList.remove('d-none');
+  },
+
+  async fetchPDFWordDefinitions(words) {
+    for (const word of words) {
+      try {
+        const r = await fetch('/api/word-definition', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word })
+        });
+        const d = await r.json();
+        this.pdfWordData[word] = d;
+        const viEl = document.getElementById(`vi-${word}`);
+        if (viEl) {
+          viEl.innerHTML = d.vietnamese
+            ? `🇻🇳 ${this.esc(d.vietnamese)}`
+            : `<span class="text-muted fst-italic">—</span>`;
+        }
+      } catch (e) {
+        this.pdfWordData[word] = { definition: '', part_of_speech: '', example: '', vietnamese: '' };
+        const viEl = document.getElementById(`vi-${word}`);
+        if (viEl) viEl.innerHTML = `<span class="text-muted fst-italic">—</span>`;
+      }
+    }
   },
 
   selectAllWords(state) {
@@ -693,24 +729,32 @@ const App = {
     for (let i = 0; i < checked.length; i++) {
       const word = checked[i];
       progBar.style.width = `${Math.round(((i + 1) / checked.length) * 100)}%`;
-      progStatus.textContent = `Fetching: ${word} (${i + 1}/${checked.length})`;
-      try {
-        const r = await fetch('/api/word-definition', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ word })
-        });
-        const d = await r.json();
-        wordsWithDefs.push({
-          word,
-          definition:    d.definition || '',
-          part_of_speech: d.part_of_speech || '',
-          example:       d.example || '',
-          vietnamese:    d.vietnamese || ''
-        });
-      } catch (e) {
-        wordsWithDefs.push({ word, definition: '', part_of_speech: '', example: '', vietnamese: '' });
+
+      // Use already-fetched data if available, otherwise fetch now
+      let d = this.pdfWordData[word];
+      if (!d) {
+        progStatus.textContent = `Fetching: ${word} (${i + 1}/${checked.length})`;
+        try {
+          const r = await fetch('/api/word-definition', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ word })
+          });
+          d = await r.json();
+        } catch (e) {
+          d = { definition: '', part_of_speech: '', example: '', vietnamese: '' };
+        }
+      } else {
+        progStatus.textContent = `Saving: ${word} (${i + 1}/${checked.length})`;
       }
+
+      wordsWithDefs.push({
+        word,
+        definition:    d.definition || '',
+        part_of_speech: d.part_of_speech || '',
+        example:       d.example || '',
+        vietnamese:    d.vietnamese || ''
+      });
     }
 
     const r = await fetch('/api/vocabulary/batch', {

@@ -198,6 +198,28 @@ body {
     color: #fff;
 }
 
+/* ── PDF word cards ── */
+.pdf-word-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    height: 100%;
+}
+.pdf-word-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(79,70,229,0.08);
+}
+.pdf-vi-text {
+    font-size: 0.78rem;
+    color: #b45309;
+    font-weight: 500;
+    min-height: 1.1rem;
+    padding-left: 1.6rem;
+    line-height: 1.3;
+}
+
 /* ── Misc ── */
 .badge {
     font-weight: 500;

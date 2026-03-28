@@ -9,16 +9,27 @@ import re
 import random
 
 app = Flask(__name__)
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+# Vercel and Cloud Run both have read-only filesystems except /tmp
+UPLOAD_FOLDER = (
+    '/tmp/uploads'
+    if os.environ.get('VERCEL') or os.environ.get('K_SERVICE')
+    else os.path.join(os.path.dirname(__file__), 'uploads')
+)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Cloud Run connects to Cloud SQL via Unix socket (Auth Proxy built-in).
+# Set INSTANCE_CONNECTION_NAME env var on Cloud Run (e.g. project:region:instance).
+_instance_conn = os.getenv('INSTANCE_CONNECTION_NAME')
 DB_CONFIG = {
-    'dbname':   'vocabquiz',
+    'dbname':   os.getenv('PG_DB', 'vocabquiz'),
     'user':     os.getenv('PG_USER', 'postgres'),
-    'password': os.getenv('PG_PASSWORD', 'tanfuu03'),
-    'host':     os.getenv('PG_HOST', 'localhost'),
-    'port':     os.getenv('PG_PORT', '5432'),
+    'password': os.getenv('PG_PASSWORD', ''),
 }
+if _instance_conn:
+    DB_CONFIG['host'] = f'/cloudsql/{_instance_conn}'
+else:
+    DB_CONFIG['host'] = os.getenv('PG_HOST', 'localhost')
+    DB_CONFIG['port'] = os.getenv('PG_PORT', '5432')
 
 STOPWORDS = set([
     'the','be','to','of','and','in','that','have','it','for','not','on','with',
@@ -306,6 +317,7 @@ def generate_quiz():
     return jsonify(questions)
 
 
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, port=5000)
