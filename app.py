@@ -113,6 +113,9 @@ def get_definition(word):
     return {'definition': '', 'part_of_speech': '', 'example': '', 'found': False}
 
 
+_VI_CHARS = re.compile(r'[àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỷỹỵ'
+                       r'ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝĂĐƠƯẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼẾỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỶỸỴ]')
+
 def get_vietnamese(word, definition=''):
     """Translate word to Vietnamese using MyMemory free API.
     Uses the definition as context for more accurate results."""
@@ -126,9 +129,10 @@ def get_vietnamese(word, definition=''):
         )
         if r.status_code == 200:
             data = r.json()
-            text = data.get('responseData', {}).get('translatedText', '')
-            if text and text.strip().lower() != query.lower():
-                return text.strip()
+            text = data.get('responseData', {}).get('translatedText', '').strip()
+            # Must differ from input AND contain actual Vietnamese characters
+            if text and text.lower() != query.lower() and _VI_CHARS.search(text):
+                return text
     except Exception:
         pass
     return ''

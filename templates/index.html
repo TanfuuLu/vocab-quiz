@@ -714,6 +714,13 @@ const App = {
             ? `🇻🇳 ${this.esc(d.vietnamese)} <i class="fas fa-pencil-alt ms-1 text-muted" style="font-size:.65rem;"></i>`
             : `<span class="text-muted fst-italic">— click to add</span>`;
         }
+        // Auto-uncheck words not found in English dictionary (likely Vietnamese/proper nouns)
+        if (d.found === false) {
+          const cb = document.getElementById(`pw-${word}`);
+          if (cb) cb.checked = false;
+          const card = cb?.closest('.pdf-word-card');
+          if (card) card.style.opacity = '0.45';
+        }
       } catch (e) {
         this.pdfWordData[word] = { definition: '', part_of_speech: '', example: '', vietnamese: '' };
         const viEl = document.getElementById(`vi-${word}`);
