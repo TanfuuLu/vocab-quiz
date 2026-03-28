@@ -113,19 +113,21 @@ def get_definition(word):
     return {'definition': '', 'part_of_speech': '', 'example': '', 'found': False}
 
 
-def get_vietnamese(word):
-    """Translate word to Vietnamese using MyMemory free API."""
+def get_vietnamese(word, definition=''):
+    """Translate word to Vietnamese using MyMemory free API.
+    Uses the definition as context for more accurate results."""
+    # Translate the definition for context; fall back to the bare word
+    query = definition.strip() if definition.strip() else word
     try:
         r = requests.get(
             'https://api.mymemory.translated.net/get',
-            params={'q': word, 'langpair': 'en|vi'},
+            params={'q': query, 'langpair': 'en|vi'},
             timeout=5
         )
         if r.status_code == 200:
             data = r.json()
             text = data.get('responseData', {}).get('translatedText', '')
-            # Ignore if the "translation" is the same as the input word
-            if text and text.strip().lower() != word.lower():
+            if text and text.strip().lower() != query.lower():
                 return text.strip()
     except Exception:
         pass
@@ -195,7 +197,7 @@ def word_definition():
     if not word:
         return jsonify({'error': 'No word provided'}), 400
     result = get_definition(word)
-    result['vietnamese'] = get_vietnamese(word)
+    result['vietnamese'] = get_vietnamese(word, result.get('definition', ''))
     return jsonify({'word': word, **result})
 
 

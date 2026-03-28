@@ -685,7 +685,7 @@ const App = {
                      value="${this.esc(w)}" id="pw-${this.esc(w)}" checked>
               <label class="form-check-label text-capitalize fw-semibold" for="pw-${this.esc(w)}">${this.esc(w)}</label>
             </div>
-            <div class="pdf-vi-text" id="vi-${this.esc(w)}">
+            <div class="pdf-vi-text" id="vi-${this.esc(w)}" title="Click to edit" onclick="App.editVietnamese('${this.esc(w)}')">
               <span class="spinner-border spinner-border-sm text-muted"
                     style="width:.65rem;height:.65rem;border-width:1.5px;"></span>
             </div>
@@ -711,19 +711,64 @@ const App = {
         const viEl = document.getElementById(`vi-${word}`);
         if (viEl) {
           viEl.innerHTML = d.vietnamese
-            ? `🇻🇳 ${this.esc(d.vietnamese)}`
-            : `<span class="text-muted fst-italic">—</span>`;
+            ? `🇻🇳 ${this.esc(d.vietnamese)} <i class="fas fa-pencil-alt ms-1 text-muted" style="font-size:.65rem;"></i>`
+            : `<span class="text-muted fst-italic">— click to add</span>`;
         }
       } catch (e) {
         this.pdfWordData[word] = { definition: '', part_of_speech: '', example: '', vietnamese: '' };
         const viEl = document.getElementById(`vi-${word}`);
-        if (viEl) viEl.innerHTML = `<span class="text-muted fst-italic">—</span>`;
+        if (viEl) viEl.innerHTML = `<span class="text-muted fst-italic">— click to add</span>`;
       }
     }
   },
 
   selectAllWords(state) {
     document.querySelectorAll('.pdf-word-check').forEach(cb => cb.checked = state);
+  },
+
+  editVietnamese(word) {
+    const viEl = document.getElementById(`vi-${word}`);
+    if (!viEl || viEl.querySelector('input')) return; // already editing
+    const current = (this.pdfWordData[word] || {}).vietnamese || '';
+    viEl.innerHTML = `
+      <div class="d-flex gap-1 align-items-center">
+        <input type="text" class="form-control form-control-sm py-0"
+               value="${this.esc(current)}"
+               placeholder="Vietnamese meaning"
+               style="font-size:.75rem;"
+               id="vi-input-${this.esc(word)}">
+        <button class="btn btn-sm btn-success py-0 px-1" style="font-size:.7rem;"
+                onclick="event.stopPropagation(); App.saveVietnamese('${this.esc(word)}')">✓</button>
+      </div>`;
+    document.getElementById(`vi-input-${word}`)?.focus();
+    document.getElementById(`vi-input-${word}`)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') App.saveVietnamese(word);
+      if (e.key === 'Escape') App.cancelEditVietnamese(word);
+    });
+  },
+
+  saveVietnamese(word) {
+    const input = document.getElementById(`vi-input-${word}`);
+    if (!input) return;
+    const newVal = input.value.trim();
+    if (!this.pdfWordData[word]) this.pdfWordData[word] = {};
+    this.pdfWordData[word].vietnamese = newVal;
+    const viEl = document.getElementById(`vi-${word}`);
+    if (viEl) {
+      viEl.innerHTML = newVal
+        ? `🇻🇳 ${this.esc(newVal)} <i class="fas fa-pencil-alt ms-1 text-muted" style="font-size:.65rem;"></i>`
+        : `<span class="text-muted fst-italic">— click to add</span>`;
+    }
+  },
+
+  cancelEditVietnamese(word) {
+    const d = this.pdfWordData[word] || {};
+    const viEl = document.getElementById(`vi-${word}`);
+    if (viEl) {
+      viEl.innerHTML = d.vietnamese
+        ? `🇻🇳 ${this.esc(d.vietnamese)} <i class="fas fa-pencil-alt ms-1 text-muted" style="font-size:.65rem;"></i>`
+        : `<span class="text-muted fst-italic">— click to add</span>`;
+    }
   },
 
   async saveSelectedWords() {
