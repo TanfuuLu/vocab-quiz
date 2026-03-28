@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+from dotenv import load_dotenv
 import psycopg2
 import psycopg2.extras
 import psycopg2.errors
@@ -7,6 +8,8 @@ import requests
 import os
 import re
 import random
+
+load_dotenv()
 
 app = Flask(__name__)
 # Vercel and Cloud Run both have read-only filesystems except /tmp
@@ -320,4 +323,4 @@ def generate_quiz():
 init_db()
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=8000)
